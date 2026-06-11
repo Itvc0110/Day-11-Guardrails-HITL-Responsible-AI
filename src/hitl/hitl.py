@@ -66,31 +66,44 @@ class ConfidenceRouter:
             RoutingDecision with routing action and metadata
         """
         # TODO 12: Implement routing logic
-        #
-        # 1. Check if action_type is in HIGH_RISK_ACTIONS
-        #    -> If yes: always escalate (action="escalate", priority="high",
-        #       requires_human=True, reason="High-risk action: {action_type}")
-        #
-        # 2. Check confidence thresholds:
-        #    - confidence >= 0.9:
-        #      action="auto_send", priority="low",
-        #      requires_human=False, reason="High confidence"
-        #
-        #    - 0.7 <= confidence < 0.9:
-        #      action="queue_review", priority="normal",
-        #      requires_human=True, reason="Medium confidence — needs review"
-        #
-        #    - confidence < 0.7:
-        #      action="escalate", priority="high",
-        #      requires_human=True, reason="Low confidence — escalating"
 
-        return RoutingDecision(
-            action="auto_send",
-            confidence=confidence,
-            reason="TODO: implement routing logic",
-            priority="low",
-            requires_human=False,
-        )  # TODO: Replace with implementation
+        # 1. Check if action_type is high-risk
+        if action_type in HIGH_RISK_ACTIONS:
+            return RoutingDecision(
+                action="escalate",
+                confidence=confidence,
+                reason=f"High-risk action: {action_type}",
+                priority="high",
+                requires_human=True,
+            )
+
+        # 2. Route based on confidence thresholds
+        if confidence >= self.HIGH_THRESHOLD:
+            return RoutingDecision(
+                action="auto_send",
+                confidence=confidence,
+                reason="High confidence — auto-approved",
+                priority="low",
+                requires_human=False,
+            )
+
+        elif confidence >= self.MEDIUM_THRESHOLD:
+            return RoutingDecision(
+                action="queue_review",
+                confidence=confidence,
+                reason="Medium confidence — needs human review",
+                priority="normal",
+                requires_human=True,
+            )
+
+        else:
+            return RoutingDecision(
+                action="escalate",
+                confidence=confidence,
+                reason="Low confidence — escalating to human",
+                priority="high",
+                requires_human=True,
+            )
 
 
 # ============================================================
@@ -109,27 +122,27 @@ class ConfidenceRouter:
 hitl_decision_points = [
     {
         "id": 1,
-        "name": "TODO: Name this decision point",
-        "trigger": "TODO: When does this trigger?",
-        "hitl_model": "TODO: human-in-the-loop / human-on-the-loop / human-as-tiebreaker",
-        "context_needed": "TODO: What does the reviewer need to see?",
-        "example": "TODO: Give a concrete example scenario",
+        "name": "High-Value Transfer Approval",
+        "trigger": "User requests transfer amount > 10 million VND",
+        "hitl_model": "Human-in-the-loop",
+        "context_needed": "Account balance, transfer history, recipient info, transaction details",
+        "example": "Customer requests to transfer 50M VND to a new recipient. System asks human to review and approve before proceeding.",
     },
     {
         "id": 2,
-        "name": "TODO: Name this decision point",
-        "trigger": "TODO: When does this trigger?",
-        "hitl_model": "TODO: human-in-the-loop / human-on-the-loop / human-as-tiebreaker",
-        "context_needed": "TODO: What does the reviewer need to see?",
-        "example": "TODO: Give a concrete example scenario",
+        "name": "Suspicious Activity Detection",
+        "trigger": "Multiple failed login attempts OR unusual transaction pattern",
+        "hitl_model": "Human-as-tiebreaker",
+        "context_needed": "Login history, IP address, geolocation, transaction patterns, account risk score",
+        "example": "Customer's account shows login attempts from 5 different countries in 1 hour. System escalates for human verification before allowing transactions.",
     },
     {
         "id": 3,
-        "name": "TODO: Name this decision point",
-        "trigger": "TODO: When does this trigger?",
-        "hitl_model": "TODO: human-in-the-loop / human-on-the-loop / human-as-tiebreaker",
-        "context_needed": "TODO: What does the reviewer need to see?",
-        "example": "TODO: Give a concrete example scenario",
+        "name": "Data Access Request (Compliance)",
+        "trigger": "Customer requests to export or delete personal data",
+        "hitl_model": "Human-on-the-loop",
+        "context_needed": "Data deletion scope, compliance status, account activity, regulatory requirements",
+        "example": "Customer requests account closure with data deletion. System processes the request and notifies human for post-action review within 30 days.",
     },
 ]
 
